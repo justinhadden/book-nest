@@ -7,7 +7,7 @@ interface UserStateProps {
     user: User | null;
 }
 
-interface Book {
+ export interface Book {
     author: string | null;
     cover_image: string | null;
     created_at: string;
@@ -43,8 +43,8 @@ export class UserState {
         if(!this.user || !this.supabase){
             return;
         }
-
         const userId = this.user.id;
+
 
         const [booksResponse, userNamesResponse] = await Promise.all([
             this.supabase.from("books").select("*").eq("user_id", userId),
@@ -60,6 +60,42 @@ export class UserState {
 
         this.allBooks = booksResponse.data;
         this.userName = userNamesResponse.data.name;
+    }
+
+    getHighestRatedBooks(){
+        return this.allBooks.filter((book) => book.rating).toSorted((a,z) => z.rating! - a.rating!).slice(0, 9);
+    }
+
+    getUnreadBooks(){
+        return this.allBooks.filter((book)=> !book.started_reading_on).toSorted((a, z) => new Date(z.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 9);
+    }
+
+    getFavoriteGenre(){
+        if(this.allBooks.length === 0){
+            return "";
+        }
+
+        const genreCounts: { [key : string]: number } = {};
+
+        this.allBooks.forEach((book) => {
+            const genres = book.genre ? book.genre.split(",") : [];
+            genres.forEach((genre) => {
+                const trimmedGenre = genre.trim();
+                if (trimmedGenre) {
+                    if (!genreCounts[trimmedGenre]) { 
+                        genreCounts[trimmedGenre] = 1; 
+                    } else {
+                        genreCounts[trimmedGenre]++;
+                    }
+                }
+            });
+        });
+
+        const mostCommonGenre = Object.keys(genreCounts).reduce((a, b) =>
+            genreCounts[a] > genreCounts[b] ? a : b
+        );
+
+        return mostCommonGenre || null;
     }
 
     async logout(){

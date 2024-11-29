@@ -7,7 +7,7 @@
     let { user, userName } = $derived(userContext);
 </script>
 <header>
-    <a href="/">
+    <a href={user ? "/private/dashboard" : "/"}>
         <img class="logo" src={bookNestLogo} alt="Go to home" />
     </a>
     <nav>
